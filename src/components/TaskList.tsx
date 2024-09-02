@@ -2,18 +2,20 @@ import React, { useState } from 'react';
 import Task from './Task';
 import TaskForm from './TaskForm';
 import { generateWBS } from '../utils/wbsUtils';
+const [inlineEditTaskId, setInlineEditTaskId] = useState<number | null>(null);
+
 
 export interface TaskType {
   id: number;
   name: string;
   estimate: number;
   subtasks?: TaskType[];
-  parentId?: number | null;
-  wbs?: string;  // Add 'wbs' as an optional property
   description?: string;  // Prompt (Description)
   plotNotes?: string;
   characterNotes?: string;
   themeNotes?: string;
+  parentId?: number | null;
+  wbs?: string;  // Add 'wbs' as an optional property
 }
 
 const TaskList: React.FC = () => {
@@ -114,6 +116,45 @@ const TaskList: React.FC = () => {
     );
   };
 
+  const renderTaskRows = (tasks: TaskType[], parentWBS = '', indentLevel = 0) => {
+    return tasks.map((task, index) => {
+      const wbs = `${parentWBS}${index + 1}`;
+      return (
+        <React.Fragment key={task.id}>
+          <tr>
+            <td style={{ paddingLeft: `${indentLevel * 20}px` }}>{wbs}</td>
+            <td>{task.name}</td>
+            <td>{task.description}</td>
+            <td>{task.plotNotes}</td>
+            <td>{task.characterNotes}</td>
+            <td>{task.themeNotes}</td>
+            <td>
+              <button onClick={() => handleEdit(task.id)}>Edit</button>
+              <button onClick={() => handleDelete(task.id)}>Delete</button>
+              <button onClick={() => setAddingSubtaskTo(task.id)}>Add Subtask</button>
+            </td>
+          </tr>
+          {addingSubtaskTo === task.id && (
+            <tr>
+              <td colSpan={7}>
+                <TaskForm
+                  setTasks={setTasks}
+                  tasks={tasks}
+                  editingTask={null}
+                  updateTask={updateTask}
+                  parentId={task.id}
+                  addSubtask={addSubtask}
+                  formId={`subtask-${task.id}`}
+                />
+              </td>
+            </tr>
+          )}
+          {task.subtasks && renderTaskRows(task.subtasks, `${wbs}.`, indentLevel + 1)}
+        </React.Fragment>
+      );
+    });
+  };
+
   const renderTasks = (tasks: TaskType[], parentWBS = '') => {
     return tasks.map((task, index) => {
       const wbs = `${parentWBS}${index + 1}`;
@@ -159,9 +200,23 @@ const TaskList: React.FC = () => {
         tasks={tasksWithWBS}
         editingTask={editingTask}
         updateTask={updateTask}
-        formId={`topLevel`}  // Unique form ID for top-level tasks
+        formId={`topLevel`}
       />
-      {renderTasks(tasksWithWBS)}
+      <table cellPadding="5" cellSpacing="0" border={1}>
+
+        <thead>
+          <tr>
+            <th>WBS</th>
+            <th>Task Name</th>
+            <th>Description</th>
+            <th>Plot Notes</th>
+            <th>Character Notes</th>
+            <th>Theme Notes</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>{renderTaskRows(tasksWithWBS)}</tbody>
+      </table>
     </div>
   );
 };
