@@ -53,6 +53,25 @@ describe('TaskList Component', () => {
         expect(screen.getByText('1. Write Chapter 2')).toBeInTheDocument();
     });
 
+    // test editing the task estimate
+    test('edits a task estimate', () => {
+        render(<TaskList />);
+    
+        // Click the Edit button for the first task
+        fireEvent.click(screen.getAllByText('Edit')[0]);
+    
+        // Fill out the form
+        fireEvent.change(screen.getByLabelText('Estimate (Pomodoros):'), {
+            target: { value: '42' },
+        });
+    
+        // Submit the form
+        fireEvent.click(screen.getByText('Update Task'));
+    
+        // Check that the task estimate is updated
+        expect(screen.getByText('Estimate: 42 pomodoros')).toBeInTheDocument();
+    });
+
     test('deletes a task', () => {
         render(<TaskList />);
 
@@ -61,5 +80,32 @@ describe('TaskList Component', () => {
         expect(screen.queryByText('Generate a theme')).not.toBeInTheDocument();
     });
 
+    // add a subtask
+    // test('adds a subtask to a task', () => {
+    //     render(<TaskList />);
+      
+    //     // Add a new task
+    //     fireEvent.change(screen.getByLabelText('Task Name:'), {
+    //       target: { value: 'Write Introduction' },
+    //     });
+    //     fireEvent.change(screen.getByLabelText('Estimate (Pomodoros):'), {
+    //       target: { value: 2 },
+    //     });
+    //     fireEvent.click(screen.getByText('Add Task'));
+      
+    //     expect(screen.getByText('4. Write Introduction')).toBeInTheDocument();
+      
+    //     //Click the "Add Subtask" button
+    //     fireEvent.click(screen.getAllByText('Add Subtask')[0]);
+
+    //     // use formid to target subtask fields (assuming formid='subtask-1')
+    //     fireEvent.change(screen.getByLabelText('Subtask Name:'), {
+    //       target: { value: 'Research topic' },
+    //     });
+      
+    //     fireEvent.click(screen.getByText('Add This Subtask'));
+      
+    //     expect(screen.getByText('1.1. Research topic')).toBeInTheDocument();
+    //   });
 
 });

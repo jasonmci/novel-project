@@ -10,6 +10,10 @@ export interface TaskType {
   subtasks?: TaskType[];
   parentId?: number | null;
   wbs?: string;  // Add 'wbs' as an optional property
+  description?: string;  // Prompt (Description)
+  plotNotes?: string;
+  characterNotes?: string;
+  themeNotes?: string;
 }
 
 const TaskList: React.FC = () => {
@@ -19,21 +23,20 @@ const TaskList: React.FC = () => {
     { id: 3, name: 'Generate a theme', estimate: 4, subtasks: [] },
   ]);
 
-  const [editingTask, setEditingTask] = useState<TaskType | null>(null);  // Track the task being edited
+  const [editingTask, setEditingTask] = useState<TaskType | null>(null);
+  const [addingSubtaskTo, setAddingSubtaskTo] = useState<number | null>(null);
+  const [nextId, setNextId] = useState<number>(tasks.length + 1); // Track the next available ID
 
   const handleEdit = (id: number) => {
-    console.log('Edit button clicked for task ID:', id);
     const taskToEdit = findTaskById(tasks, id);
     if (taskToEdit) {
-      console.log('Found task to edit:', taskToEdit);
       setEditingTask(taskToEdit);
     }
   };
-  
 
   const handleDelete = (id: number) => {
-    setTasks(tasks.filter(task => task.id !== id));
-  }
+    setTasks(deleteTaskById(tasks, id));
+  };
 
   const updateTask = (updatedTask: TaskType) => {
     setTasks(updateTaskInList(tasks, updatedTask));
@@ -42,24 +45,17 @@ const TaskList: React.FC = () => {
 
   const findTaskById = (tasks: TaskType[], id: number): TaskType | undefined => {
     for (const task of tasks) {
-      if (task.id === id) {
-        console.log('Found task:', task);
-        return task;
-      }
+      if (task.id === id) return task;
       if (task.subtasks) {
         const found = findTaskById(task.subtasks, id);
-        if (found) {
-          console.log('Found subtask:', found);
-          return found;
-        }
+        if (found) return found;
       }
     }
   };
-  
-  
 
   const deleteTaskById = (tasks: TaskType[], id: number): TaskType[] => {
-    return tasks.filter(task => task.id !== id)
+    return tasks
+      .filter(task => task.id !== id)
       .map(task => ({
         ...task,
         subtasks: task.subtasks ? deleteTaskById(task.subtasks, id) : [],
@@ -77,18 +73,75 @@ const TaskList: React.FC = () => {
     );
   };
 
+  const addSubtask = (
+    parentId: number, 
+    name: string, 
+    estimate: number,
+    description?: string,
+    plotNotes?: string,
+    characterNotes?: string,
+    themeNotes?: string
+  ) => {
+    const newSubtask: TaskType = {
+      id: nextId,
+      name,
+      estimate,
+      description,
+      plotNotes,
+      characterNotes,
+      themeNotes,
+      parentId,
+      subtasks: [],
+    };
+    setNextId(nextId + 1); // Increment the next ID
+
+    const updatedTasks = tasks.map(task =>
+      task.id === parentId
+        ? { ...task, subtasks: [...(task.subtasks || []), newSubtask] }
+        : {
+            ...task,
+            subtasks: task.subtasks ? addSubtaskInTree(task.subtasks, parentId, newSubtask) : [],
+          }
+    );
+    setTasks(updatedTasks);
+  };
+
+  const addSubtaskInTree = (subtasks: TaskType[], parentId: number, newTask: TaskType): TaskType[] => {
+    return subtasks.map(task =>
+      task.id === parentId
+        ? { ...task, subtasks: [...(task.subtasks || []), newTask] }
+        : { ...task, subtasks: task.subtasks ? addSubtaskInTree(task.subtasks, parentId, newTask) : [] }
+    );
+  };
+
   const renderTasks = (tasks: TaskType[], parentWBS = '') => {
     return tasks.map((task, index) => {
       const wbs = `${parentWBS}${index + 1}`;
       return (
-        <div key={task.id}>
+        <div key={task.id} style={{ marginLeft: parentWBS ? '20px' : '0px' }}>
           <Task
             id={task.id}
             name={`${wbs}. ${task.name}`}
             estimate={task.estimate}
+            description={task.description}
+            plotNotes={task.plotNotes}
+            characterNotes={task.characterNotes}
+            themeNotes={task.themeNotes}
             onEdit={handleEdit}
             onDelete={handleDelete}
           />
+          <button onClick={() => setAddingSubtaskTo(task.id)}>Add Subtask</button>
+          {addingSubtaskTo === task.id && (
+            <TaskForm
+              setTasks={setTasks}
+              tasks={tasks}
+              editingTask={null}
+              updateTask={updateTask}
+              parentId={task.id} // Pass the parentId to add a subtask
+              addSubtask={addSubtask} // Pass the addSubtask function
+              formId={`subtask-${task.id}`}  // Unique form ID for subtasks
+            />
+          )}
           {task.subtasks && renderTasks(task.subtasks, `${wbs}.`)}
         </div>
       );
@@ -103,9 +156,10 @@ const TaskList: React.FC = () => {
       <h2>Tasks</h2>
       <TaskForm
         setTasks={setTasks}
-        tasks={tasksWithWBS}  // Pass tasksWithWBS here
+        tasks={tasksWithWBS}
         editingTask={editingTask}
         updateTask={updateTask}
+        formId={`topLevel`}  // Unique form ID for top-level tasks
       />
       {renderTasks(tasksWithWBS)}
     </div>
