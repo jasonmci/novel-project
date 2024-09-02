@@ -13,7 +13,7 @@ const Task: React.FC<TaskProps> = ({ id, name, estimate, onEdit, onDelete }) => 
     <div>
       <h3>{name}</h3>
       <p>Estimate: {estimate} pomodoros</p>
-      <button onClick={() => onEdit(id)}>Edit</button>  {/* Edit button */}
+      <button onClick={() => onEdit(id)}>Edit</button>
       <button onClick={() => onDelete(id)}>Delete</button>
     </div>
   );

@@ -8,8 +8,8 @@ describe('TaskList Component', () => {
     render(<TaskList />);
 
     // Check that the initial tasks are rendered
-    expect(screen.getByText('Outline Plot')).toBeInTheDocument();
-    expect(screen.getByText('Develop Characters')).toBeInTheDocument()
+    expect(screen.getByText('1. Outline Plot')).toBeInTheDocument();
+    expect(screen.getByText('2. Develop Characters')).toBeInTheDocument()
   });
 
   // add a test to check that a new task can be added
@@ -28,7 +28,7 @@ describe('TaskList Component', () => {
         fireEvent.click(screen.getByText('Add Task'));
     
         // Check that the new task is rendered
-        expect(screen.getByText('Write Chapter 1')).toBeInTheDocument();
+        expect(screen.getByText('4. Write Chapter 1')).toBeInTheDocument();
     });
 
     // add a test to check that a task can be edited
@@ -43,14 +43,14 @@ describe('TaskList Component', () => {
             target: { value: 'Write Chapter 2' },
         });
         fireEvent.change(screen.getByLabelText('Estimate (Pomodoros):'), {
-            target: { value: '2' },
+            target: { value: '9' },
         });
     
         // Submit the form
         fireEvent.click(screen.getByText('Update Task'));
     
         // Check that the task is updated
-        expect(screen.getByText('Write Chapter 2')).toBeInTheDocument();
+        expect(screen.getByText('1. Write Chapter 2')).toBeInTheDocument();
     });
 
     test('deletes a task', () => {

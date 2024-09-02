@@ -1,40 +1,62 @@
 import React, { useState, useEffect } from 'react';
+import { TaskType } from '../components/TaskList';  // Import TaskType
 
 interface TaskFormProps {
-  tasks: { id: number; name: string; estimate: number }[];
-  setTasks: React.Dispatch<React.SetStateAction<{ id: number; name: string; estimate: number }[]>>;
-  editingTask: { id: number; name: string; estimate: number } | null;
-  updateTask: (task: { id: number; name: string; estimate: number }) => void;
+  tasks: TaskType[];
+  setTasks: React.Dispatch<React.SetStateAction<TaskType[]>>;
+  editingTask: TaskType | null;
+  updateTask: (task: TaskType) => void;
+  parentId?: number | null;  // New prop for adding subtasks
 }
 
-const TaskForm: React.FC<TaskFormProps> = ({ tasks, setTasks, editingTask, updateTask }) => {
+const TaskForm: React.FC<TaskFormProps> = ({
+  tasks,
+  setTasks,
+  editingTask,
+  updateTask,
+  parentId = null,
+}) => {
   const [name, setName] = useState('');
   const [estimate, setEstimate] = useState(1);
 
   useEffect(() => {
     if (editingTask) {
+      console.log('Populating form with task:', editingTask);
       setName(editingTask.name);
       setEstimate(editingTask.estimate);
     }
   }, [editingTask]);
+  
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     if (editingTask) {
       // Update existing task
-      updateTask({ id: editingTask.id, name, estimate });
+      updateTask({ ...editingTask, name, estimate });
     } else {
-      // Add new task
-      const newTask = {
+      // Add new task or subtask
+      const newTask: TaskType = {
         id: tasks.length + 1,
         name,
         estimate,
+        parentId,
+        subtasks: [],
       };
-      setTasks([...tasks, newTask]);
+      
+      if (parentId) {
+        // Find the parent task and add the subtask
+        const updatedTasks = tasks.map(task =>
+          task.id === parentId
+            ? { ...task, subtasks: [...(task.subtasks || []), newTask] }
+            : task
+        );
+        setTasks(updatedTasks);
+      } else {
+        setTasks([...tasks, newTask]);
+      }
     }
 
-    // Clear form fields
     setName('');
     setEstimate(1);
   };
@@ -62,7 +84,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ tasks, setTasks, editingTask, updat
         />
       </div>
       <button type="submit">
-        {editingTask ? 'Update Task' : 'Add Task'}
+        {editingTask ? 'Update Task' : parentId ? 'Add Subtask' : 'Add Task'}
       </button>
     </form>
   );
